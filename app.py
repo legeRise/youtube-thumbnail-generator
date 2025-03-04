@@ -39,8 +39,8 @@ for idx, text_item in enumerate(st.session_state.text_items):
         text_item["y"] = st.slider(f"↕ Y Position {idx+1}", 0, 600, text_item["y"], key=f"y_{idx}")
         text_item["color"] = st.color_picker(f"🎨 Text Color {idx+1}", text_item["color"], key=f"color_{idx}")
 
-# Font setup
-urdu_font_path = os.path.join("Noto_Nastaliq_Urdu","static","NotoNastaliqUrdu-Bold.ttf") 
+# Font setup 
+urdu_font_path = os.path.abspath("Noto_Nastaliq_Urdu/static/NotoNastaliqUrdu-Bold.ttf")
 
 if uploaded_image:
     image = Image.open(uploaded_image).resize((426, 720))
