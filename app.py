@@ -42,6 +42,11 @@ for idx, text_item in enumerate(st.session_state.text_items):
 # Font setup 
 urdu_font_path = os.path.abspath("Noto_Nastaliq_Urdu/static/NotoNastaliqUrdu-Bold.ttf")
 
+if urdu_font_path:
+  print(urdu_font_path,"ye")
+else: 
+  print(urdu_font_path,"no")
+
 if uploaded_image:
     image = Image.open(uploaded_image).resize((426, 720))
     background = Image.open(text_bg_image).resize((854, 720)) if text_bg_image else Image.new("RGB", (854, 720), color=text_bg_color)
