@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Thumbnail Generator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#FF4B4B',
+            secondary: '#3B82F6',
+            dark: '#1F2937',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    .slider-thumb::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FF4B4B;
+      cursor: pointer;
+    }
+    .slider-thumb::-moz-range-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: #FF4B4B;
+      cursor: pointer;
+    }
+    .text-item-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+    }
+    .text-item-content.open {
+      max-height: 500px;
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+  <div class="container mx-auto px-4 py-8">
+    <header class="mb-8 text-center">
+      <h1 class="text-3xl font-bold text-dark mb-2">🎨 YouTube Thumbnail Generator</h1>
+      <p class="text-gray-600">Create professional YouTube thumbnails in seconds</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <!-- Controls Panel -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <!-- Image Upload Section -->
+        <div class="mb-6">
+          <h2 class="text-xl font-semibold mb-4">📤 Upload Images</h2>
+          
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-2">Side Image</label>
+            <div class="flex items-center justify-center w-full">
+              <label class="flex flex-col w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <div class="flex flex-col items-center justify-center pt-7">
+                  <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                  </svg>
+                  <p class="pt-1 text-sm text-gray-400" id="side-image-name">Drag & drop or click to upload</p>
+                </div>
+                <input id="side-image-upload" type="file" class="hidden" accept="image/*" />
+              </label>
+            </div>
+          </div>
+
+          <!-- Background Options -->
+          <div class="mb-4">
+            <label class="block text-gray-700 mb-2">🖼 Background</label>
+            <div class="flex space-x-4 mb-4">
+              <label class="inline-flex items-center">
+                <input type="radio" name="background-option" value="color" class="form-radio text-primary" checked>
+                <span class="ml-2">Color</span>
+              </label>
+              <label class="inline-flex items-center">
+                <input type="radio" name="background-option" value="image" class="form-radio text-primary">
+                <span class="ml-2">Image</span>
+              </label>
+            </div>
+            
+            <div id="bg-color-container" class="mb-4">
+              <label class="block text-gray-700 mb-2">Background Color</label>
+              <input type="color" id="bg-color-picker" value="#FFFFFF" class="h-10 w-full rounded border border-gray-300">
+            </div>
+            
+            <div id="bg-image-container" class="mb-4 hidden">
+              <label class="block text-gray-700 mb-2">Background Image</label>
+              <div class="flex items-center justify-center w-full">
+                <label class="flex flex-col w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                  <div class="flex flex-col items-center justify-center pt-7">
+                    <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <p class="pt-1 text-sm text-gray-400" id="bg-image-name">Drag & drop or click to upload</p>
+                  </div>
+                  <input id="bg-image-upload" type="file" class="hidden" accept="image/*" />
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Text Controls Section -->
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-xl font-semibold">📝 Text Elements</h2>
+            <button id="add-text-btn" class="bg-primary hover:bg-red-600 text-white px-4 py-2 rounded-lg transition-colors">
+              ➕ Add Text
+            </button>
+          </div>
+          
+          <div id="text-items-container" class="space-y-4">
+            <!-- Text items will be added here dynamically -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview Panel -->
+      <div class="bg-white rounded-lg shadow-lg p-6">
+        <h2 class="text-xl font-semibold mb-4">🖼 Preview</h2>
+        <div class="relative bg-gray-200 rounded-lg overflow-hidden">
+          <canvas id="thumbnail-canvas" width="1280" height="720" class="w-full h-auto"></canvas>
+        </div>
+        <div class="mt-4 flex justify-center">
+          <button id="download-btn" class="bg-secondary hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">
+            ⬇ Download Thumbnail
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State management
+    const state = {
+      textItems: [],
+      sideImage: null,
+      backgroundType: 'color',
+      backgroundColor: '#FFFFFF',
+      backgroundImage: null
+    };
+
+    // DOM Elements
+    const canvas = document.getElementById('thumbnail-canvas');
+    const ctx = canvas.getContext('2d');
+    const sideImageUpload = document.getElementById('side-image-upload');
+    const sideImageName = document.getElementById('side-image-name');
+    const bgColorPicker = document.getElementById('bg-color-picker');
+    const bgImageUpload = document.getElementById('bg-image-upload');
+    const bgImageName = document.getElementById('bg-image-name');
+    const bgColorContainer = document.getElementById('bg-color-container');
+    const bgImageContainer = document.getElementById('bg-image-container');
+    const addTextBtn = document.getElementById('add-text-btn');
+    const textItemsContainer = document.getElementById('text-items-container');
+    const downloadBtn = document.getElementById('download-btn');
+    const backgroundOptions = document.querySelectorAll('input[name="background-option"]');
+
+    // Initialize canvas with a grid pattern
+    function initCanvas() {
+      ctx.fillStyle = '#f0f0f0';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = '#e0e0e0';
+      const gridSize = 20;
+      for (let x = 0; x < canvas.width; x += gridSize) {
+        for (let y = 0; y < canvas.height; y += gridSize) {
+          if ((x / gridSize + y / gridSize) % 2 === 0) {
+            ctx.fillRect(x, y, gridSize, gridSize);
+          }
+        }
+      }
+      
+      ctx.font = '24px Arial';
+      ctx.fillStyle = '#999';
+      ctx.textAlign = 'center';
+      ctx.fillText('Upload images to start creating your thumbnail', canvas.width / 2, canvas.height / 2);
+    }
+
+    // Render the thumbnail
+    function renderThumbnail() {
+      if (!state.sideImage) return;
+      
+      // Clear canvas
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      // Draw background
+      if (state.backgroundType === 'color') {
+        ctx.fillStyle = state.backgroundColor;
+        ctx.fillRect(0, 0, 854, 720);
+      } else if (state.backgroundType === 'image' && state.backgroundImage) {
+        ctx.drawImage(state.backgroundImage, 0, 0, 854, 720);
+      } else {
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(0, 0, 854, 720);
+      }
+      
+      // Draw side image
+      ctx.drawImage(state.sideImage, 854, 0, 426, 720);
+      
+      // Draw text items
+      state.textItems.forEach(item => {
+        // Set font with bold option
+        const fontWeight = item.bold ? 'bold' : 'normal';
+        ctx.font = `${fontWeight} ${item.size}px Arial`;
+        ctx.fillStyle = item.color;
+        
+        // Handle text wrapping
+        const maxWidth = 800;
+        const lineHeight = item.size * 1.2;
+        const words = item.text.split(' ');
+        let line = '';
+        let y = item.y;
+        
+        for (let i = 0; i < words.length; i++) {
+          const testLine = line + words[i] + ' ';
+          const metrics = ctx.measureText(testLine);
+          const testWidth = metrics.width;
+          
+          if (testWidth > maxWidth && i > 0) {
+            ctx.fillText(line, item.x, y);
+            line = words[i] + ' ';
+            y += lineHeight;
+          } else {
+            line = testLine;
+          }
+        }
+        
+        ctx.fillText(line, item.x, y);
+      });
+    }
+
+    // Add a new text item
+    function addTextItem() {
+      const lastItem = state.textItems.length > 0 ? state.textItems[state.textItems.length - 1] : null;
+      const newItem = {
+        id: Date.now(),
+        text: '',
+        x: 50,
+        y: lastItem ? lastItem.y + 60 : 100,
+        size: lastItem ? lastItem.size : 40,
+        color: lastItem ? lastItem.color : '#000000',
+        bold: false
+      };
+      
+      state.textItems.push(newItem);
+      renderTextItemControls(newItem);
+      renderThumbnail();
+    }
+
+    // Render controls for a text item
+    function renderTextItemControls(item) {
+      const itemElement = document.createElement('div');
+      itemElement.className = 'bg-gray-50 p-4 rounded-lg border border-gray-200';
+      itemElement.dataset.id = item.id;
+      
+      itemElement.innerHTML = `
+        <div class="flex justify-between items-center mb-2 cursor-pointer text-item-header">
+          <h3 class="font-medium">Text Element</h3>
+          <div class="flex items-center">
+            <button class="delete-text-btn text-red-500 hover:text-red-700 mr-2">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+              </svg>
+            </button>
+            <svg class="w-5 h-5 toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </div>
+        </div>
+        
+        <div class="text-item-content open">
+          <div class="mb-3">
+            <label class="block text-gray-700 text-sm mb-1">Text</label>
+            <textarea class="text-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">${item.text}</textarea>
+          </div>
+          
+          <div class="mb-3">
+            <label class="block text-gray-700 text-sm mb-1">Font Style</label>
+            <div class="flex items-center">
+              <label class="inline-flex items-center mr-4">
+                <input type="checkbox" class="bold-checkbox form-checkbox text-primary" ${item.bold ? 'checked' : ''}>
+                <span class="ml-2 font-bold">Bold</span>
+              </label>
+            </div>
+          </div>
+          
+          <div class="mb-3">
+            <label class="block text-gray-700 text-sm mb-1">Font Size: <span class="size-value">${item.size}</span>px</label>
+            <input type="range" class="size-slider slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none" min="20" max="100" value="${item.size}">
+          </div>
+          
+          <div class="grid grid-cols-2 gap-3 mb-3">
+            <div>
+              <label class="block text-gray-700 text-sm mb-1">X Position: <span class="x-value">${item.x}</span></label>
+              <input type="range" class="x-slider slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none" min="0" max="800" value="${item.x}">
+            </div>
+            <div>
+              <label class="block text-gray-700 text-sm mb-1">Y Position: <span class="y-value">${item.y}</span></label>
+              <input type="range" class="y-slider slider-thumb w-full h-2 bg-gray-200 rounded-lg appearance-none" min="0" max="700" value="${item.y}">
+            </div>
+          </div>
+          
+          <div>
+            <label class="block text-gray-700 text-sm mb-1">Text Color</label>
+            <input type="color" class="color-picker h-10 w-full rounded border border-gray-300" value="${item.color}">
+          </div>
+        </div>
+      `;
+      
+      textItemsContainer.appendChild(itemElement);
+      
+      // Add event listeners
+      const textInput = itemElement.querySelector('.text-input');
+      const boldCheckbox = itemElement.querySelector('.bold-checkbox');
+      const sizeSlider = itemElement.querySelector('.size-slider');
+      const sizeValue = itemElement.querySelector('.size-value');
+      const xSlider = itemElement.querySelector('.x-slider');
+      const xValue = itemElement.querySelector('.x-value');
+      const ySlider = itemElement.querySelector('.y-slider');
+      const yValue = itemElement.querySelector('.y-value');
+      const colorPicker = itemElement.querySelector('.color-picker');
+      const deleteBtn = itemElement.querySelector('.delete-text-btn');
+      const header = itemElement.querySelector('.text-item-header');
+      const content = itemElement.querySelector('.text-item-content');
+      
+      textInput.addEventListener('input', e => {
+        item.text = e.target.value;
+        renderThumbnail();
+      });
+      
+      boldCheckbox.addEventListener('change', e => {
+        item.bold = e.target.checked;
+        renderThumbnail();
+      });
+      
+      sizeSlider.addEventListener('input', e => {
+        item.size = parseInt(e.target.value);
+        sizeValue.textContent = item.size;
+        renderThumbnail();
+      });
+      
+      xSlider.addEventListener('input', e => {
+        item.x = parseInt(e.target.value);
+        xValue.textContent = item.x;
+        renderThumbnail();
+      });
+      
+      ySlider.addEventListener('input', e => {
+        item.y = parseInt(e.target.value);
+        yValue.textContent = item.y;
+        renderThumbnail();
+      });
+      
+      colorPicker.addEventListener('input', e => {
+        item.color = e.target.value;
+        renderThumbnail();
+      });
+      
+      deleteBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        state.textItems = state.textItems.filter(t => t.id !== item.id);
+        itemElement.remove();
+        renderThumbnail();
+      });
+      
+      header.addEventListener('click', () => {
+        content.classList.toggle('open');
+        const icon = header.querySelector('.toggle-icon');
+        if (content.classList.contains('open')) {
+          icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>';
+        } else {
+          icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>';
+        }
+      });
+    }
+
+    // Load image from file input
+    function loadImage(file, callback) {
+      const reader = new FileReader();
+      reader.onload = e => {
+        const img = new Image();
+        img.onload = () => callback(img);
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    // Event Listeners
+    sideImageUpload.addEventListener('change', e => {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        sideImageName.textContent = file.name;
+        loadImage(file, img => {
+          state.sideImage = img;
+          renderThumbnail();
+        });
+      }
+    });
+
+    bgImageUpload.addEventListener('change', e => {
+      if (e.target.files && e.target.files[0]) {
+        const file = e.target.files[0];
+        bgImageName.textContent = file.name;
+        loadImage(file, img => {
+          state.backgroundImage = img;
+          renderThumbnail();
+        });
+      }
+    });
+
+    bgColorPicker.addEventListener('input', e => {
+      state.backgroundColor = e.target.value;
+      renderThumbnail();
+    });
+
+    backgroundOptions.forEach(option => {
+      option.addEventListener('change', e => {
+        state.backgroundType = e.target.value;
+        if (state.backgroundType === 'color') {
+          bgColorContainer.classList.remove('hidden');
+          bgImageContainer.classList.add('hidden');
+        } else {
+          bgColorContainer.classList.add('hidden');
+          bgImageContainer.classList.remove('hidden');
+        }
+        renderThumbnail();
+      });
+    });
+
+    addTextBtn.addEventListener('click', addTextItem);
+
+    downloadBtn.addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'youtube-thumbnail.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    });
+
+    // Initialize
+    initCanvas();
+    addTextItem(); // Add one text item by default
+  </script>
+</body>
+</html>
