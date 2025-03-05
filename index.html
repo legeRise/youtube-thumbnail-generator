@@ -50,7 +50,6 @@
       border: 2px solid #ccc;
       border-radius: 8px;
       max-height: 70vh;
-      touch-action: none; /* Prevent browser handling of touch events */
     }
     .crop-image {
       display: block;
@@ -61,57 +60,55 @@
       border: 3px dashed white;
       box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
       cursor: move;
-      touch-action: none; /* Prevent browser handling of touch events */
     }
     .crop-handle {
       position: absolute;
-      width: 24px; /* Increased size for better touch targets */
-      height: 24px; /* Increased size for better touch targets */
+      width: 16px;
+      height: 16px;
       background-color: white;
       border: 2px solid #FF4B4B;
       border-radius: 50%;
-      touch-action: none; /* Prevent browser handling of touch events */
     }
     .crop-handle-nw {
-      top: -12px;
-      left: -12px;
+      top: -8px;
+      left: -8px;
       cursor: nw-resize;
     }
     .crop-handle-ne {
-      top: -12px;
-      right: -12px;
+      top: -8px;
+      right: -8px;
       cursor: ne-resize;
     }
     .crop-handle-sw {
-      bottom: -12px;
-      left: -12px;
+      bottom: -8px;
+      left: -8px;
       cursor: sw-resize;
     }
     .crop-handle-se {
-      bottom: -12px;
-      right: -12px;
+      bottom: -8px;
+      right: -8px;
       cursor: se-resize;
     }
     .crop-handle-n {
-      top: -12px;
+      top: -8px;
       left: 50%;
       transform: translateX(-50%);
       cursor: n-resize;
     }
     .crop-handle-e {
-      right: -12px;
+      right: -8px;
       top: 50%;
       transform: translateY(-50%);
       cursor: e-resize;
     }
     .crop-handle-s {
-      bottom: -12px;
+      bottom: -8px;
       left: 50%;
       transform: translateX(-50%);
       cursor: s-resize;
     }
     .crop-handle-w {
-      left: -12px;
+      left: -8px;
       top: 50%;
       transform: translateY(-50%);
       cursor: w-resize;
@@ -473,12 +470,12 @@
               </svg>
             </button>
             <svg class="w-5 h-5 toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
             </svg>
           </div>
         </div>
         
-        <div class="text-item-content">
+        <div class="text-item-content open">
           <div class="mb-3">
             <label class="block text-gray-700 text-sm mb-1">Text</label>
             <textarea class="text-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">${item.text}</textarea>
@@ -632,10 +629,6 @@
       const cropY = (containerHeight - cropHeight) / 2;
       
       // Update crop overlay
-        / 2;
-      const cropY = (containerHeight - cropHeight) / 2;
-      
-      // Update crop overlay
       cropOverlay.style.left = `${cropX}px`;
       cropOverlay.style.top = `${cropY}px`;
       cropOverlay.style.width = `${cropWidth}px`;
@@ -750,226 +743,6 @@
 
     // Set up drag and resize handlers for crop overlay
     function setupCropHandlers() {
-      // Touch event handlers for crop overlay
-      setupTouchEvents();
-      
-      // Mouse event handlers for crop overlay
-      setupMouseEvents();
-    }
-    
-    // Setup touch events for mobile devices
-    function setupTouchEvents() {
-      // Make crop overlay draggable with touch
-      cropOverlay.addEventListener('touchstart', (e) => {
-        if (e.target === cropOverlay) {
-          e.preventDefault();
-          state.isDragging = true;
-          const touch = e.touches[0];
-          state.dragStart = {
-            x: touch.clientX,
-            y: touch.clientY
-          };
-        }
-      }, { passive: false });
-      
-      // Set up resize handlers for touch
-      const handles = [
-        { el: handleNW, handle: 'nw' },
-        { el: handleN, handle: 'n' },
-        { el: handleNE, handle: 'ne' },
-        { el: handleE, handle: 'e' },
-        { el: handleSE, handle: 'se' },
-        { el: handleS, handle: 's' },
-        { el: handleSW, handle: 'sw' },
-        { el: handleW, handle: 'w' }
-      ];
-      
-      handles.forEach(({ el, handle }) => {
-        el.addEventListener('touchstart', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          state.isResizing = true;
-          state.resizeHandle = handle;
-          const touch = e.touches[0];
-          state.dragStart = {
-            x: touch.clientX,
-            y: touch.clientY
-          };
-        }, { passive: false });
-      });
-      
-      // Handle touch move for both dragging and resizing
-      document.addEventListener('touchmove', handleTouchMove, { passive: false });
-      
-      // Handle touch end
-      document.addEventListener('touchend', () => {
-        state.isDragging = false;
-        state.isResizing = false;
-      });
-    }
-    
-    // Handle touch move for dragging and resizing
-    function handleTouchMove(e) {
-      if (!state.isDragging && !state.isResizing) return;
-      
-      e.preventDefault();
-      
-      const touch = e.touches[0];
-      const imageRect = cropImage.getBoundingClientRect();
-      const overlayRect = cropOverlay.getBoundingClientRect();
-      
-      if (state.isDragging) {
-        // Calculate the new position
-        const deltaX = touch.clientX - state.dragStart.x;
-        const deltaY = touch.clientY - state.dragStart.y;
-        
-        let newLeft = overlayRect.left - imageRect.left + deltaX;
-        let newTop = overlayRect.top - imageRect.top + deltaY;
-        
-        // Apply boundaries
-        newLeft = Math.max(0, Math.min(newLeft, imageRect.width - overlayRect.width));
-        newTop = Math.max(0, Math.min(newTop, imageRect.height - overlayRect.height));
-        
-        // Update position
-        cropOverlay.style.left = `${newLeft}px`;
-        cropOverlay.style.top = `${newTop}px`;
-        
-        // Update drag start
-        state.dragStart = {
-          x: touch.clientX,
-          y: touch.clientY
-        };
-        
-        // Update crop data
-        updateCropData();
-      } else if (state.isResizing) {
-        // Calculate the new dimensions
-        const deltaX = touch.clientX - state.dragStart.x;
-        const deltaY = touch.clientY - state.dragStart.y;
-        
-        let newLeft = parseInt(cropOverlay.style.left) || 0;
-        let newTop = parseInt(cropOverlay.style.top) || 0;
-        let newWidth = parseInt(cropOverlay.style.width) || 0;
-        let newHeight = parseInt(cropOverlay.style.height) || 0;
-        
-        // Apply changes based on which handle is being dragged
-        switch (state.resizeHandle) {
-          case 'nw':
-            newLeft += deltaX;
-            newTop += deltaY;
-            newWidth -= deltaX;
-            newHeight -= deltaY;
-            break;
-          case 'n':
-            newTop += deltaY;
-            newHeight -= deltaY;
-            break;
-          case 'ne':
-            newTop += deltaY;
-            newWidth += deltaX;
-            newHeight -= deltaY;
-            break;
-          case 'e':
-            newWidth += deltaX;
-            break;
-          case 'se':
-            newWidth += deltaX;
-            newHeight += deltaY;
-            break;
-          case 's':
-            newHeight += deltaY;
-            break;
-          case 'sw':
-            newLeft += deltaX;
-            newWidth -= deltaX;
-            newHeight += deltaY;
-            break;
-          case 'w':
-            newLeft += deltaX;
-            newWidth -= deltaX;
-            break;
-        }
-        
-        // Maintain aspect ratio if needed
-        if (state.aspectRatio !== 'free' && state.aspectRatio !== 'full') {
-          const [widthRatio, heightRatio] = state.aspectRatio.split(':').map(Number);
-          const aspectRatio = widthRatio / heightRatio;
-          
-          // Adjust dimensions based on which handle is being dragged
-          if (['n', 's'].includes(state.resizeHandle)) {
-            // Adjust width based on height
-            newWidth = newHeight * aspectRatio;
-          } else if (['e', 'w'].includes(state.resizeHandle)) {
-            // Adjust height based on width
-            newHeight = newWidth / aspectRatio;
-          } else {
-            // For corner handles, prioritize the dimension that changed more
-            if (Math.abs(deltaX) > Math.abs(deltaY)) {
-              newHeight = newWidth / aspectRatio;
-            } else {
-              newWidth = newHeight * aspectRatio;
-            }
-          }
-          
-          // Adjust position for handles that affect position
-          if (['nw', 'w', 'sw'].includes(state.resizeHandle)) {
-            newLeft = parseInt(cropOverlay.style.left) + parseInt(cropOverlay.style.width) - newWidth;
-          }
-          if (['nw', 'n', 'ne'].includes(state.resizeHandle)) {
-            newTop = parseInt(cropOverlay.style.top) + parseInt(cropOverlay.style.height) - newHeight;
-          }
-        }
-        
-        // Ensure minimum size
-        const minSize = 50;
-        if (newWidth < minSize) {
-          newWidth = minSize;
-          if (['nw', 'w', 'sw'].includes(state.resizeHandle)) {
-            newLeft = parseInt(cropOverlay.style.left) + parseInt(cropOverlay.style.width) - newWidth;
-          }
-        }
-        if (newHeight < minSize) {
-          newHeight = minSize;
-          if (['nw', 'n', 'ne'].includes(state.resizeHandle)) {
-            newTop = parseInt(cropOverlay.style.top) + parseInt(cropOverlay.style.height) - newHeight;
-          }
-        }
-        
-        // Apply boundaries
-        if (newLeft < 0) {
-          newWidth += newLeft;
-          newLeft = 0;
-        }
-        if (newTop < 0) {
-          newHeight += newTop;
-          newTop = 0;
-        }
-        if (newLeft + newWidth > imageRect.width) {
-          newWidth = imageRect.width - newLeft;
-        }
-        if (newTop + newHeight > imageRect.height) {
-          newHeight = imageRect.height - newTop;
-        }
-        
-        // Update crop overlay
-        cropOverlay.style.left = `${newLeft}px`;
-        cropOverlay.style.top = `${newTop}px`;
-        cropOverlay.style.width = `${newWidth}px`;
-        cropOverlay.style.height = `${newHeight}px`;
-        
-        // Update drag start
-        state.dragStart = {
-          x: touch.clientX,
-          y: touch.clientY
-        };
-        
-        // Update crop data
-        updateCropData();
-      }
-    }
-    
-    // Setup mouse events
-    function setupMouseEvents() {
       // Make crop overlay draggable
       cropOverlay.addEventListener('mousedown', (e) => {
         if (e.target === cropOverlay) {
@@ -1287,7 +1060,7 @@
     // Initialize
     initCanvas();
     setupCropHandlers();
-    // Don't add text item by default - user can choose to add if needed
+    addTextItem(); // Add one text item by default
 
     // Add drag and drop support for image uploads
     sideImageLabel.addEventListener('dragover', (e) => {
