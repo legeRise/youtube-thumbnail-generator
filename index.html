@@ -43,14 +43,133 @@
     .text-item-content.open {
       max-height: 500px;
     }
+    .crop-container {
+      position: relative;
+      overflow: hidden;
+      margin: 0 auto;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      max-height: 70vh;
+      touch-action: none; /* Prevent browser handling of touch events */
+    }
+    .crop-image {
+      display: block;
+      max-width: 100%;
+    }
+    .crop-overlay {
+      position: absolute;
+      border: 3px dashed white;
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.6);
+      cursor: move;
+      touch-action: none; /* Prevent browser handling of touch events */
+    }
+    .crop-handle {
+      position: absolute;
+      width: 24px; /* Increased size for better touch targets */
+      height: 24px; /* Increased size for better touch targets */
+      background-color: white;
+      border: 2px solid #FF4B4B;
+      border-radius: 50%;
+      touch-action: none; /* Prevent browser handling of touch events */
+    }
+    .crop-handle-nw {
+      top: -12px;
+      left: -12px;
+      cursor: nw-resize;
+    }
+    .crop-handle-ne {
+      top: -12px;
+      right: -12px;
+      cursor: ne-resize;
+    }
+    .crop-handle-sw {
+      bottom: -12px;
+      left: -12px;
+      cursor: sw-resize;
+    }
+    .crop-handle-se {
+      bottom: -12px;
+      right: -12px;
+      cursor: se-resize;
+    }
+    .crop-handle-n {
+      top: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: n-resize;
+    }
+    .crop-handle-e {
+      right: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: e-resize;
+    }
+    .crop-handle-s {
+      bottom: -12px;
+      left: 50%;
+      transform: translateX(-50%);
+      cursor: s-resize;
+    }
+    .crop-handle-w {
+      left: -12px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: w-resize;
+    }
   </style>
 </head>
 <body class="bg-gray-100 min-h-screen">
   <div class="container mx-auto px-4 py-8">
     <header class="mb-8 text-center">
       <h1 class="text-3xl font-bold text-dark mb-2">🎨 YouTube Thumbnail Generator</h1>
-      <p class="text-gray-600">Create professional YouTube thumbnails in seconds</p>
+      <p class="text-gray-600">A minimal Thumbnail Maker</p>
     </header>
+
+    <!-- Crop Modal -->
+    <div id="crop-modal" class="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4" style="display: none;">
+      <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full p-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-bold">Crop Image</h2>
+          <button id="close-crop-modal" class="text-gray-500 hover:text-gray-700">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        
+        <!-- Aspect Ratio Options -->
+        <div class="flex flex-wrap gap-2 mb-4">
+          <button class="aspect-ratio-option px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300 active" data-ratio="free">Free Form</button>
+          <button class="aspect-ratio-option px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300" data-ratio="1:1">Square (1:1)</button>
+          <button class="aspect-ratio-option px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300" data-ratio="4:3">Standard (4:3)</button>
+          <button class="aspect-ratio-option px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300" data-ratio="16:9">Widescreen (16:9)</button>
+          <button class="aspect-ratio-option px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300" data-ratio="9:16">Portrait (9:16)</button>
+          <button class="aspect-ratio-option px-3 py-1 rounded-md bg-gray-200 hover:bg-gray-300" data-ratio="full">Full Image</button>
+        </div>
+        
+        <!-- Crop Container -->
+        <div class="crop-container mb-4">
+          <img id="crop-image" class="crop-image" src="#" alt="Image to crop">
+          <div id="crop-overlay" class="crop-overlay">
+            <div class="crop-handle crop-handle-nw" id="handle-nw"></div>
+            <div class="crop-handle crop-handle-n" id="handle-n"></div>
+            <div class="crop-handle crop-handle-ne" id="handle-ne"></div>
+            <div class="crop-handle crop-handle-e" id="handle-e"></div>
+            <div class="crop-handle crop-handle-se" id="handle-se"></div>
+            <div class="crop-handle crop-handle-s" id="handle-s"></div>
+            <div class="crop-handle crop-handle-sw" id="handle-sw"></div>
+            <div class="crop-handle crop-handle-w" id="handle-w"></div>
+          </div>
+        </div>
+        
+        <p class="text-gray-600 italic mb-4">Drag the highlighted area to move it. Use the handles to resize.</p>
+        
+        <div class="flex justify-end gap-3">
+          <button id="cancel-crop" class="px-4 py-2 bg-gray-200 hover:bg-gray-300 rounded-md">Cancel</button>
+          <button id="apply-crop" class="px-4 py-2 bg-primary hover:bg-red-600 text-white rounded-md">Apply Crop</button>
+        </div>
+      </div>
+    </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <!-- Controls Panel -->
@@ -62,7 +181,7 @@
           <div class="mb-4">
             <label class="block text-gray-700 mb-2">Side Image</label>
             <div class="flex items-center justify-center w-full">
-              <label class="flex flex-col w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+              <label id="side-image-label" class="flex flex-col w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                 <div class="flex flex-col items-center justify-center pt-7">
                   <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -71,6 +190,19 @@
                 </div>
                 <input id="side-image-upload" type="file" class="hidden" accept="image/*" />
               </label>
+            </div>
+            <div id="side-image-preview" class="mt-3 hidden">
+              <div class="flex items-center justify-between">
+                <p class="text-sm text-gray-600">Image uploaded successfully</p>
+                <div class="flex gap-2">
+                  <button id="crop-side-image" class="text-primary hover:text-red-600 text-sm font-medium">
+                    Crop Image
+                  </button>
+                  <button id="remove-side-image" class="text-gray-500 hover:text-gray-700 text-sm">
+                    Remove
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -96,7 +228,7 @@
             <div id="bg-image-container" class="mb-4 hidden">
               <label class="block text-gray-700 mb-2">Background Image</label>
               <div class="flex items-center justify-center w-full">
-                <label class="flex flex-col w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                <label id="bg-image-label" class="flex flex-col w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                   <div class="flex flex-col items-center justify-center pt-7">
                     <svg class="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
@@ -105,6 +237,19 @@
                   </div>
                   <input id="bg-image-upload" type="file" class="hidden" accept="image/*" />
                 </label>
+              </div>
+              <div id="bg-image-preview" class="mt-3 hidden">
+                <div class="flex items-center justify-between">
+                  <p class="text-sm text-gray-600">Image uploaded successfully</p>
+                  <div class="flex gap-2">
+                    <button id="crop-bg-image" class="text-primary hover:text-red-600 text-sm font-medium">
+                      Crop Image
+                    </button>
+                    <button id="remove-bg-image" class="text-gray-500 hover:text-gray-700 text-sm">
+                      Remove
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -145,25 +290,72 @@
     const state = {
       textItems: [],
       sideImage: null,
+      originalSideImage: null,
       backgroundType: 'color',
       backgroundColor: '#FFFFFF',
-      backgroundImage: null
+      backgroundImage: null,
+      originalBgImage: null,
+      currentCropTarget: null, // 'side' or 'background'
+      cropData: {
+        x: 0,
+        y: 0,
+        width: 0,
+        height: 0
+      },
+      aspectRatio: 'free',
+      isResizing: false,
+      resizeHandle: '',
+      isDragging: false,
+      dragStart: { x: 0, y: 0 }
     };
 
     // DOM Elements
     const canvas = document.getElementById('thumbnail-canvas');
     const ctx = canvas.getContext('2d');
+    
+    // Upload elements
     const sideImageUpload = document.getElementById('side-image-upload');
     const sideImageName = document.getElementById('side-image-name');
+    const sideImageLabel = document.getElementById('side-image-label');
+    const sideImagePreview = document.getElementById('side-image-preview');
+    const cropSideImageBtn = document.getElementById('crop-side-image');
+    const removeSideImageBtn = document.getElementById('remove-side-image');
+    
     const bgColorPicker = document.getElementById('bg-color-picker');
     const bgImageUpload = document.getElementById('bg-image-upload');
     const bgImageName = document.getElementById('bg-image-name');
+    const bgImageLabel = document.getElementById('bg-image-label');
+    const bgImagePreview = document.getElementById('bg-image-preview');
+    const cropBgImageBtn = document.getElementById('crop-bg-image');
+    const removeBgImageBtn = document.getElementById('remove-bg-image');
+    
     const bgColorContainer = document.getElementById('bg-color-container');
     const bgImageContainer = document.getElementById('bg-image-container');
+    
+    // Text elements
     const addTextBtn = document.getElementById('add-text-btn');
     const textItemsContainer = document.getElementById('text-items-container');
     const downloadBtn = document.getElementById('download-btn');
     const backgroundOptions = document.querySelectorAll('input[name="background-option"]');
+    
+    // Crop modal elements
+    const cropModal = document.getElementById('crop-modal');
+    const closeCropModalBtn = document.getElementById('close-crop-modal');
+    const cropImage = document.getElementById('crop-image');
+    const cropOverlay = document.getElementById('crop-overlay');
+    const aspectRatioOptions = document.querySelectorAll('.aspect-ratio-option');
+    const cancelCropBtn = document.getElementById('cancel-crop');
+    const applyCropBtn = document.getElementById('apply-crop');
+    
+    // Crop handles
+    const handleNW = document.getElementById('handle-nw');
+    const handleN = document.getElementById('handle-n');
+    const handleNE = document.getElementById('handle-ne');
+    const handleE = document.getElementById('handle-e');
+    const handleSE = document.getElementById('handle-se');
+    const handleS = document.getElementById('handle-s');
+    const handleSW = document.getElementById('handle-sw');
+    const handleW = document.getElementById('handle-w');
 
     // Initialize canvas with a grid pattern
     function initCanvas() {
@@ -188,8 +380,6 @@
 
     // Render the thumbnail
     function renderThumbnail() {
-      if (!state.sideImage) return;
-      
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       
@@ -204,8 +394,18 @@
         ctx.fillRect(0, 0, 854, 720);
       }
       
-      // Draw side image
-      ctx.drawImage(state.sideImage, 854, 0, 426, 720);
+      // Draw side image if available
+      if (state.sideImage) {
+        ctx.drawImage(state.sideImage, 854, 0, 426, 720);
+      } else {
+        // Draw placeholder for side image
+        ctx.fillStyle = '#e0e0e0';
+        ctx.fillRect(854, 0, 426, 720);
+        ctx.font = '18px Arial';
+        ctx.fillStyle = '#999';
+        ctx.textAlign = 'center';
+        ctx.fillText('Upload side image', 854 + 426/2, 720/2);
+      }
       
       // Draw text items
       state.textItems.forEach(item => {
@@ -273,12 +473,12 @@
               </svg>
             </button>
             <svg class="w-5 h-5 toggle-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
             </svg>
           </div>
         </div>
         
-        <div class="text-item-content open">
+        <div class="text-item-content">
           <div class="mb-3">
             <label class="block text-gray-700 text-sm mb-1">Text</label>
             <textarea class="text-input w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">${item.text}</textarea>
@@ -395,34 +595,650 @@
       reader.readAsDataURL(file);
     }
 
-    // Event Listeners
+    // Show crop modal
+    function showCropModal(image, target) {
+      state.currentCropTarget = target;
+      
+      // Reset aspect ratio
+      state.aspectRatio = 'free';
+      aspectRatioOptions.forEach(opt => opt.classList.remove('active'));
+      aspectRatioOptions[0].classList.add('active');
+      
+      // Set crop image source
+      cropImage.src = image.src;
+      
+      // Show modal
+      cropModal.style.display = 'flex';
+      
+      // Initialize crop overlay after image loads
+      cropImage.onload = () => {
+        initCropOverlay();
+      };
+    }
+
+    // Initialize crop overlay
+    function initCropOverlay() {
+      // Calculate initial crop dimensions
+      const containerRect = cropImage.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const containerHeight = containerRect.height;
+      
+      // Use 80% of the image for initial crop
+      const cropWidth = containerWidth * 0.8;
+      const cropHeight = containerHeight * 0.8;
+      
+      // Center the crop overlay
+      const cropX = (containerWidth - cropWidth) / 2;
+      const cropY = (containerHeight - cropHeight) / 2;
+      
+      // Update crop overlay
+        / 2;
+      const cropY = (containerHeight - cropHeight) / 2;
+      
+      // Update crop overlay
+      cropOverlay.style.left = `${cropX}px`;
+      cropOverlay.style.top = `${cropY}px`;
+      cropOverlay.style.width = `${cropWidth}px`;
+      cropOverlay.style.height = `${cropHeight}px`;
+      
+      // Update crop data
+      updateCropData();
+    }
+
+    // Update crop overlay based on aspect ratio
+    function updateCropOverlay() {
+      // Calculate container dimensions
+      const containerRect = cropImage.getBoundingClientRect();
+      const containerWidth = containerRect.width;
+      const containerHeight = containerRect.height;
+      
+      // Calculate crop dimensions based on aspect ratio
+      let cropWidth, cropHeight;
+      
+      if (state.aspectRatio === 'full') {
+        // Use full image
+        cropWidth = containerWidth;
+        cropHeight = containerHeight;
+      } else if (state.aspectRatio === 'free') {
+        // Use 80% of the image for free crop
+        cropWidth = containerWidth * 0.8;
+        cropHeight = containerHeight * 0.8;
+      } else {
+        // Parse aspect ratio
+        const [widthRatio, heightRatio] = state.aspectRatio.split(':').map(Number);
+        
+        // Calculate crop dimensions based on aspect ratio
+        if (widthRatio / heightRatio > containerWidth / containerHeight) {
+          cropWidth = containerWidth * 0.8;
+          cropHeight = cropWidth * (heightRatio / widthRatio);
+        } else {
+          cropHeight = containerHeight * 0.8;
+          cropWidth = cropHeight * (widthRatio / heightRatio);
+        }
+      }
+      
+      // Center the crop overlay
+      const cropX = (containerWidth - cropWidth) / 2;
+      const cropY = (containerHeight - cropHeight) / 2;
+      
+      // Update crop overlay
+      cropOverlay.style.left = `${cropX}px`;
+      cropOverlay.style.top = `${cropY}px`;
+      cropOverlay.style.width = `${cropWidth}px`;
+      cropOverlay.style.height = `${cropHeight}px`;
+      
+      // Update crop data
+      updateCropData();
+    }
+
+    // Update crop data based on overlay position
+    function updateCropData() {
+      const imageRect = cropImage.getBoundingClientRect();
+      const overlayRect = cropOverlay.getBoundingClientRect();
+      
+      // Calculate scale factor between displayed image and original image
+      const originalImage = state.currentCropTarget === 'side' ? state.originalSideImage : state.originalBgImage;
+      const scaleX = originalImage.width / imageRect.width;
+      const scaleY = originalImage.height / imageRect.height;
+      
+      // Calculate crop coordinates relative to the image
+      state.cropData = {
+        x: (overlayRect.left - imageRect.left) * scaleX,
+        y: (overlayRect.top - imageRect.top) * scaleY,
+        width: overlayRect.width * scaleX,
+        height: overlayRect.height * scaleY
+      };
+    }
+
+    // Apply crop to image
+    function applyCrop() {
+      const originalImage = state.currentCropTarget === 'side' ? state.originalSideImage : state.originalBgImage;
+      
+      // Create a canvas to crop the image
+      const canvas = document.createElement('canvas');
+      canvas.width = state.cropData.width;
+      canvas.height = state.cropData.height;
+      
+      // Draw the cropped portion of the image
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(
+        originalImage,
+        state.cropData.x, state.cropData.y,
+        state.cropData.width, state.cropData.height,
+        0, 0,
+        state.cropData.width, state.cropData.height
+      );
+      
+      // Create a new image from the cropped canvas
+      const croppedImage = new Image();
+      croppedImage.onload = () => {
+        if (state.currentCropTarget === 'side') {
+          state.sideImage = croppedImage;
+        } else {
+          state.backgroundImage = croppedImage;
+        }
+        renderThumbnail();
+        closeCropModal();
+      };
+      croppedImage.src = canvas.toDataURL();
+    }
+
+    // Close crop modal
+    function closeCropModal() {
+      cropModal.style.display = 'none';
+    }
+
+    // Set up drag and resize handlers for crop overlay
+    function setupCropHandlers() {
+      // Touch event handlers for crop overlay
+      setupTouchEvents();
+      
+      // Mouse event handlers for crop overlay
+      setupMouseEvents();
+    }
+    
+    // Setup touch events for mobile devices
+    function setupTouchEvents() {
+      // Make crop overlay draggable with touch
+      cropOverlay.addEventListener('touchstart', (e) => {
+        if (e.target === cropOverlay) {
+          e.preventDefault();
+          state.isDragging = true;
+          const touch = e.touches[0];
+          state.dragStart = {
+            x: touch.clientX,
+            y: touch.clientY
+          };
+        }
+      }, { passive: false });
+      
+      // Set up resize handlers for touch
+      const handles = [
+        { el: handleNW, handle: 'nw' },
+        { el: handleN, handle: 'n' },
+        { el: handleNE, handle: 'ne' },
+        { el: handleE, handle: 'e' },
+        { el: handleSE, handle: 'se' },
+        { el: handleS, handle: 's' },
+        { el: handleSW, handle: 'sw' },
+        { el: handleW, handle: 'w' }
+      ];
+      
+      handles.forEach(({ el, handle }) => {
+        el.addEventListener('touchstart', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          state.isResizing = true;
+          state.resizeHandle = handle;
+          const touch = e.touches[0];
+          state.dragStart = {
+            x: touch.clientX,
+            y: touch.clientY
+          };
+        }, { passive: false });
+      });
+      
+      // Handle touch move for both dragging and resizing
+      document.addEventListener('touchmove', handleTouchMove, { passive: false });
+      
+      // Handle touch end
+      document.addEventListener('touchend', () => {
+        state.isDragging = false;
+        state.isResizing = false;
+      });
+    }
+    
+    // Handle touch move for dragging and resizing
+    function handleTouchMove(e) {
+      if (!state.isDragging && !state.isResizing) return;
+      
+      e.preventDefault();
+      
+      const touch = e.touches[0];
+      const imageRect = cropImage.getBoundingClientRect();
+      const overlayRect = cropOverlay.getBoundingClientRect();
+      
+      if (state.isDragging) {
+        // Calculate the new position
+        const deltaX = touch.clientX - state.dragStart.x;
+        const deltaY = touch.clientY - state.dragStart.y;
+        
+        let newLeft = overlayRect.left - imageRect.left + deltaX;
+        let newTop = overlayRect.top - imageRect.top + deltaY;
+        
+        // Apply boundaries
+        newLeft = Math.max(0, Math.min(newLeft, imageRect.width - overlayRect.width));
+        newTop = Math.max(0, Math.min(newTop, imageRect.height - overlayRect.height));
+        
+        // Update position
+        cropOverlay.style.left = `${newLeft}px`;
+        cropOverlay.style.top = `${newTop}px`;
+        
+        // Update drag start
+        state.dragStart = {
+          x: touch.clientX,
+          y: touch.clientY
+        };
+        
+        // Update crop data
+        updateCropData();
+      } else if (state.isResizing) {
+        // Calculate the new dimensions
+        const deltaX = touch.clientX - state.dragStart.x;
+        const deltaY = touch.clientY - state.dragStart.y;
+        
+        let newLeft = parseInt(cropOverlay.style.left) || 0;
+        let newTop = parseInt(cropOverlay.style.top) || 0;
+        let newWidth = parseInt(cropOverlay.style.width) || 0;
+        let newHeight = parseInt(cropOverlay.style.height) || 0;
+        
+        // Apply changes based on which handle is being dragged
+        switch (state.resizeHandle) {
+          case 'nw':
+            newLeft += deltaX;
+            newTop += deltaY;
+            newWidth -= deltaX;
+            newHeight -= deltaY;
+            break;
+          case 'n':
+            newTop += deltaY;
+            newHeight -= deltaY;
+            break;
+          case 'ne':
+            newTop += deltaY;
+            newWidth += deltaX;
+            newHeight -= deltaY;
+            break;
+          case 'e':
+            newWidth += deltaX;
+            break;
+          case 'se':
+            newWidth += deltaX;
+            newHeight += deltaY;
+            break;
+          case 's':
+            newHeight += deltaY;
+            break;
+          case 'sw':
+            newLeft += deltaX;
+            newWidth -= deltaX;
+            newHeight += deltaY;
+            break;
+          case 'w':
+            newLeft += deltaX;
+            newWidth -= deltaX;
+            break;
+        }
+        
+        // Maintain aspect ratio if needed
+        if (state.aspectRatio !== 'free' && state.aspectRatio !== 'full') {
+          const [widthRatio, heightRatio] = state.aspectRatio.split(':').map(Number);
+          const aspectRatio = widthRatio / heightRatio;
+          
+          // Adjust dimensions based on which handle is being dragged
+          if (['n', 's'].includes(state.resizeHandle)) {
+            // Adjust width based on height
+            newWidth = newHeight * aspectRatio;
+          } else if (['e', 'w'].includes(state.resizeHandle)) {
+            // Adjust height based on width
+            newHeight = newWidth / aspectRatio;
+          } else {
+            // For corner handles, prioritize the dimension that changed more
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+              newHeight = newWidth / aspectRatio;
+            } else {
+              newWidth = newHeight * aspectRatio;
+            }
+          }
+          
+          // Adjust position for handles that affect position
+          if (['nw', 'w', 'sw'].includes(state.resizeHandle)) {
+            newLeft = parseInt(cropOverlay.style.left) + parseInt(cropOverlay.style.width) - newWidth;
+          }
+          if (['nw', 'n', 'ne'].includes(state.resizeHandle)) {
+            newTop = parseInt(cropOverlay.style.top) + parseInt(cropOverlay.style.height) - newHeight;
+          }
+        }
+        
+        // Ensure minimum size
+        const minSize = 50;
+        if (newWidth < minSize) {
+          newWidth = minSize;
+          if (['nw', 'w', 'sw'].includes(state.resizeHandle)) {
+            newLeft = parseInt(cropOverlay.style.left) + parseInt(cropOverlay.style.width) - newWidth;
+          }
+        }
+        if (newHeight < minSize) {
+          newHeight = minSize;
+          if (['nw', 'n', 'ne'].includes(state.resizeHandle)) {
+            newTop = parseInt(cropOverlay.style.top) + parseInt(cropOverlay.style.height) - newHeight;
+          }
+        }
+        
+        // Apply boundaries
+        if (newLeft < 0) {
+          newWidth += newLeft;
+          newLeft = 0;
+        }
+        if (newTop < 0) {
+          newHeight += newTop;
+          newTop = 0;
+        }
+        if (newLeft + newWidth > imageRect.width) {
+          newWidth = imageRect.width - newLeft;
+        }
+        if (newTop + newHeight > imageRect.height) {
+          newHeight = imageRect.height - newTop;
+        }
+        
+        // Update crop overlay
+        cropOverlay.style.left = `${newLeft}px`;
+        cropOverlay.style.top = `${newTop}px`;
+        cropOverlay.style.width = `${newWidth}px`;
+        cropOverlay.style.height = `${newHeight}px`;
+        
+        // Update drag start
+        state.dragStart = {
+          x: touch.clientX,
+          y: touch.clientY
+        };
+        
+        // Update crop data
+        updateCropData();
+      }
+    }
+    
+    // Setup mouse events
+    function setupMouseEvents() {
+      // Make crop overlay draggable
+      cropOverlay.addEventListener('mousedown', (e) => {
+        if (e.target === cropOverlay) {
+          e.preventDefault();
+          state.isDragging = true;
+          state.dragStart = {
+            x: e.clientX,
+            y: e.clientY
+          };
+        }
+      });
+      
+      // Set up resize handlers
+      const handles = [
+        { el: handleNW, handle: 'nw' },
+        { el: handleN, handle: 'n' },
+        { el: handleNE, handle: 'ne' },
+        { el: handleE, handle: 'e' },
+        { el: handleSE, handle: 'se' },
+        { el: handleS, handle: 's' },
+        { el: handleSW, handle: 'sw' },
+        { el: handleW, handle: 'w' }
+      ];
+      
+      handles.forEach(({ el, handle }) => {
+        el.addEventListener('mousedown', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          state.isResizing = true;
+          state.resizeHandle = handle;
+          state.dragStart = {
+            x: e.clientX,
+            y: e.clientY
+          };
+        });
+      });
+      
+      // Handle mouse move for both dragging and resizing
+      document.addEventListener('mousemove', handleMouseMove);
+      
+      // Handle mouse up
+      document.addEventListener('mouseup', () => {
+        state.isDragging = false;
+        state.isResizing = false;
+      });
+    }
+
+    // Handle mouse move for dragging and resizing
+    function handleMouseMove(e) {
+      if (!state.isDragging && !state.isResizing) return;
+      
+      e.preventDefault();
+      
+      const imageRect = cropImage.getBoundingClientRect();
+      const overlayRect = cropOverlay.getBoundingClientRect();
+      
+      if (state.isDragging) {
+        // Calculate the new position
+        const deltaX = e.clientX - state.dragStart.x;
+        const deltaY = e.clientY - state.dragStart.y;
+        
+        let newLeft = overlayRect.left - imageRect.left + deltaX;
+        let newTop = overlayRect.top - imageRect.top + deltaY;
+        
+        // Apply boundaries
+        newLeft = Math.max(0, Math.min(newLeft, imageRect.width - overlayRect.width));
+        newTop = Math.max(0, Math.min(newTop, imageRect.height - overlayRect.height));
+        
+        // Update position
+        cropOverlay.style.left = `${newLeft}px`;
+        cropOverlay.style.top = `${newTop}px`;
+        
+        // Update drag start
+        state.dragStart = {
+          x: e.clientX,
+          y: e.clientY
+        };
+        
+        // Update crop data
+        updateCropData();
+      } else if (state.isResizing) {
+        // Calculate the new dimensions
+        const deltaX = e.clientX - state.dragStart.x;
+        const deltaY = e.clientY - state.dragStart.y;
+        
+        let newLeft = parseInt(cropOverlay.style.left) || 0;
+        let newTop = parseInt(cropOverlay.style.top) || 0;
+        let newWidth = parseInt(cropOverlay.style.width) || 0;
+        let newHeight = parseInt(cropOverlay.style.height) || 0;
+        
+        // Apply changes based on which handle is being dragged
+        switch (state.resizeHandle) {
+          case 'nw':
+            newLeft += deltaX;
+            newTop += deltaY;
+            newWidth -= deltaX;
+            newHeight -= deltaY;
+            break;
+          case 'n':
+            newTop += deltaY;
+            newHeight -= deltaY;
+            break;
+          case 'ne':
+            newTop += deltaY;
+            newWidth += deltaX;
+            newHeight -= deltaY;
+            break;
+          case 'e':
+            newWidth += deltaX;
+            break;
+          case 'se':
+            newWidth += deltaX;
+            newHeight += deltaY;
+            break;
+          case 's':
+            newHeight += deltaY;
+            break;
+          case 'sw':
+            newLeft += deltaX;
+            newWidth -= deltaX;
+            newHeight += deltaY;
+            break;
+          case 'w':
+            newLeft += deltaX;
+            newWidth -= deltaX;
+            break;
+        }
+        
+        // Maintain aspect ratio if needed
+        if (state.aspectRatio !== 'free' && state.aspectRatio !== 'full') {
+          const [widthRatio, heightRatio] = state.aspectRatio.split(':').map(Number);
+          const aspectRatio = widthRatio / heightRatio;
+          
+          // Adjust dimensions based on which handle is being dragged
+          if (['n', 's'].includes(state.resizeHandle)) {
+            // Adjust width based on height
+            newWidth = newHeight * aspectRatio;
+          } else if (['e', 'w'].includes(state.resizeHandle)) {
+            // Adjust height based on width
+            newHeight = newWidth / aspectRatio;
+          } else {
+            // For corner handles, prioritize the dimension that changed more
+            if (Math.abs(deltaX) > Math.abs(deltaY)) {
+              newHeight = newWidth / aspectRatio;
+            } else {
+              newWidth = newHeight * aspectRatio;
+            }
+          }
+          
+          // Adjust position for handles that affect position
+          if (['nw', 'w', 'sw'].includes(state.resizeHandle)) {
+            newLeft = parseInt(cropOverlay.style.left) + parseInt(cropOverlay.style.width) - newWidth;
+          }
+          if (['nw', 'n', 'ne'].includes(state.resizeHandle)) {
+            newTop = parseInt(cropOverlay.style.top) + parseInt(cropOverlay.style.height) - newHeight;
+          }
+        }
+        
+        // Ensure minimum size
+        const minSize = 50;
+        if (newWidth < minSize) {
+          newWidth = minSize;
+          if (['nw', 'w', 'sw'].includes(state.resizeHandle)) {
+            newLeft = parseInt(cropOverlay.style.left) + parseInt(cropOverlay.style.width) - newWidth;
+          }
+        }
+        if (newHeight < minSize) {
+          newHeight = minSize;
+          if (['nw', 'n', 'ne'].includes(state.resizeHandle)) {
+            newTop = parseInt(cropOverlay.style.top) + parseInt(cropOverlay.style.height) - newHeight;
+          }
+        }
+        
+        // Apply boundaries
+        if (newLeft < 0) {
+          newWidth += newLeft;
+          newLeft = 0;
+        }
+        if (newTop < 0) {
+          newHeight += newTop;
+          newTop = 0;
+        }
+        if (newLeft + newWidth > imageRect.width) {
+          newWidth = imageRect.width - newLeft;
+        }
+        if (newTop + newHeight > imageRect.height) {
+          newHeight = imageRect.height - newTop;
+        }
+        
+        // Update crop overlay
+        cropOverlay.style.left = `${newLeft}px`;
+        cropOverlay.style.top = `${newTop}px`;
+        cropOverlay.style.width = `${newWidth}px`;
+        cropOverlay.style.height = `${newHeight}px`;
+        
+        // Update drag start
+        state.dragStart = {
+          x: e.clientX,
+          y: e.clientY
+        };
+        
+        // Update crop data
+        updateCropData();
+      }
+    }
+
+    // Event Listeners for side image
     sideImageUpload.addEventListener('change', e => {
       if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
         sideImageName.textContent = file.name;
         loadImage(file, img => {
+          state.originalSideImage = img;
           state.sideImage = img;
+          sideImagePreview.classList.remove('hidden');
           renderThumbnail();
         });
       }
     });
 
+    cropSideImageBtn.addEventListener('click', () => {
+      if (state.originalSideImage) {
+        showCropModal(state.originalSideImage, 'side');
+      }
+    });
+
+    removeSideImageBtn.addEventListener('click', () => {
+      state.sideImage = null;
+      state.originalSideImage = null;
+      sideImageName.textContent = 'Drag & drop or click to upload';
+      sideImagePreview.classList.add('hidden');
+      renderThumbnail();
+    });
+
+    // Event Listeners for background image
     bgImageUpload.addEventListener('change', e => {
       if (e.target.files && e.target.files[0]) {
         const file = e.target.files[0];
         bgImageName.textContent = file.name;
         loadImage(file, img => {
+          state.originalBgImage = img;
           state.backgroundImage = img;
+          bgImagePreview.classList.remove('hidden');
           renderThumbnail();
         });
       }
     });
 
+    cropBgImageBtn.addEventListener('click', () => {
+      if (state.originalBgImage) {
+        showCropModal(state.originalBgImage, 'background');
+      }
+    });
+
+    removeBgImageBtn.addEventListener('click', () => {
+      state.backgroundImage = null;
+      state.originalBgImage = null;
+      bgImageName.textContent = 'Drag & drop or click to upload';
+      bgImagePreview.classList.add('hidden');
+      renderThumbnail();
+    });
+
+    // Background color picker
     bgColorPicker.addEventListener('input', e => {
       state.backgroundColor = e.target.value;
       renderThumbnail();
     });
 
+    // Background type radio buttons
     backgroundOptions.forEach(option => {
       option.addEventListener('change', e => {
         state.backgroundType = e.target.value;
@@ -437,8 +1253,30 @@
       });
     });
 
+    // Aspect ratio options
+    aspectRatioOptions.forEach(option => {
+      option.addEventListener('click', () => {
+        // Update active state
+        aspectRatioOptions.forEach(opt => opt.classList.remove('active'));
+        option.classList.add('active');
+        
+        // Update aspect ratio
+        state.aspectRatio = option.dataset.ratio;
+        
+        // Update crop overlay
+        updateCropOverlay();
+      });
+    });
+
+    // Crop modal buttons
+    closeCropModalBtn.addEventListener('click', closeCropModal);
+    cancelCropBtn.addEventListener('click', closeCropModal);
+    applyCropBtn.addEventListener('click', applyCrop);
+
+    // Text button
     addTextBtn.addEventListener('click', addTextItem);
 
+    // Download button
     downloadBtn.addEventListener('click', () => {
       const link = document.createElement('a');
       link.download = 'youtube-thumbnail.png';
@@ -448,7 +1286,61 @@
 
     // Initialize
     initCanvas();
-    addTextItem(); // Add one text item by default
+    setupCropHandlers();
+    // Don't add text item by default - user can choose to add if needed
+
+    // Add drag and drop support for image uploads
+    sideImageLabel.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      sideImageLabel.classList.add('border-primary', 'bg-red-50');
+    });
+    
+    sideImageLabel.addEventListener('dragleave', () => {
+      sideImageLabel.classList.remove('border-primary', 'bg-red-50');
+    });
+    
+    sideImageLabel.addEventListener('drop', (e) => {
+      e.preventDefault();
+      sideImageLabel.classList.remove('border-primary', 'bg-red-50');
+      
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        const file = e.dataTransfer.files[0];
+        sideImageUpload.files = e.dataTransfer.files;
+        sideImageName.textContent = file.name;
+        loadImage(file, img => {
+          state.originalSideImage = img;
+          state.sideImage = img;
+          sideImagePreview.classList.remove('hidden');
+          renderThumbnail();
+        });
+      }
+    });
+    
+    bgImageLabel.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      bgImageLabel.classList.add('border-primary', 'bg-red-50');
+    });
+    
+    bgImageLabel.addEventListener('dragleave', () => {
+      bgImageLabel.classList.remove('border-primary', 'bg-red-50');
+    });
+    
+    bgImageLabel.addEventListener('drop', (e) => {
+      e.preventDefault();
+      bgImageLabel.classList.remove('border-primary', 'bg-red-50');
+      
+      if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+        const file = e.dataTransfer.files[0];
+        bgImageUpload.files = e.dataTransfer.files;
+        bgImageName.textContent = file.name;
+        loadImage(file, img => {
+          state.originalBgImage = img;
+          state.backgroundImage = img;
+          bgImagePreview.classList.remove('hidden');
+          renderThumbnail();
+        });
+      }
+    });
   </script>
 </body>
 </html>
